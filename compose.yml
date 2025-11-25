@@ -1,0 +1,17 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_server
+    environment:
+      MYSQL_ROOT_PASSWORD: root  # Remplace par ton mot de passe
+      MYSQL_DATABASE: caveo             # Remplace par le nom de ta base de données
+      MYSQL_USER: caveo                     # Remplace par ton utilisateur (optionnel)
+      MYSQL_PASSWORD: caveo    # Remplace par le mot de passe de l'utilisateur (optionnel)
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
