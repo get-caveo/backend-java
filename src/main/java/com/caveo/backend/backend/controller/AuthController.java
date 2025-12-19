@@ -2,6 +2,9 @@ package com.caveo.backend.backend.controller;
 
 import com.caveo.backend.backend.dao.UtilisateurDao;
 import com.caveo.backend.backend.model.Utilisateur;
+import com.caveo.backend.backend.security.AppUserDetails;
+import com.caveo.backend.backend.security.IsClient;
+import com.caveo.backend.backend.security.Role;
 import com.caveo.backend.backend.view.UtilisateurView;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.jsonwebtoken.Jwts;
@@ -13,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +38,8 @@ public class AuthController {
     @JsonView(UtilisateurView.class)
     public ResponseEntity<Utilisateur> update(
             @PathVariable int id,
-            @RequestBody @Validated(Utilisateur.onMiseAjour.class) Utilisateur utilisateurEnvoye) {
+            @RequestBody @Validated(Utilisateur.onMiseAjour.class) Utilisateur utilisateurEnvoye,
+            @AuthenticationPrincipal AppUserDetails user) {
 
         Optional<Utilisateur> optionalUtilisateur = utilisateurDao.findById(id);
 
@@ -43,10 +48,17 @@ public class AuthController {
         }
 
         Utilisateur utilisateurBaseDeDonnees = optionalUtilisateur.get();
+        if (!user.getUtilisateur().getId().equals(id) && 
+        !user.getUtilisateur().getRole().equals(Role.ADMIN)) {
+        return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
 
         //setter dans l'objet provenant de la bdd uniquement les propriétés
         //que l'utilisateur à le droit de changer (par le role par exemple)
         utilisateurBaseDeDonnees.setEmail(utilisateurEnvoye.getEmail());
+        utilisateurBaseDeDonnees.setNom(utilisateurEnvoye.getNom());
+        utilisateurBaseDeDonnees.setPrenom(utilisateurEnvoye.getPrenom());
+        utilisateurBaseDeDonnees.setTelephone(utilisateurEnvoye.getTelephone());
 
         //Ici on peut gérer le cas ou l'utilisateur utilise un email déja existant
         //note : on peut également gérer une exception globalement via un @ControllerAdvice

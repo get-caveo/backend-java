@@ -34,12 +34,12 @@ public class Utilisateur {
     protected String password;
 
     @Column(nullable = false, length = 100)
-    @NotBlank(groups = { onCreation.class })
+    @NotBlank(groups = { onCreation.class, onMiseAjour.class }, message = "Le prenom ne peut pas être vide" )
     @JsonView(UtilisateurView.class)
     protected String prenom;
 
     @Column(nullable = false, length = 100)
-    @NotBlank(groups = { onCreation.class })
+    @NotBlank(groups = { onCreation.class, onMiseAjour.class }, message = "Le nom ne peut pas être vide" )
     @JsonView(UtilisateurView.class)
     protected String nom;
 
