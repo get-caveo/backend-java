@@ -10,6 +10,7 @@ services:
     ports:
       - "3306:3306"
     volumes:
+      - ./src/main/resources/db/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
       - mysql_data:/var/lib/mysql
     restart: unless-stopped
 
