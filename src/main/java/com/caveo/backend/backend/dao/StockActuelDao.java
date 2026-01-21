@@ -27,6 +27,13 @@ public interface StockActuelDao extends JpaRepository<StockActuel, Integer> {
             "AND s.quantite <= p.seuilStockMinimal")
     List<StockActuel> findStockSousSeuil();
 
+    // Compter les produits sous le seuil minimal
+    @Query("SELECT COUNT(s) FROM StockActuel s " +
+            "JOIN s.produit p " +
+            "WHERE p.actif = true " +
+            "AND s.quantite <= p.seuilStockMinimal")
+    long countStockSousSeuil();
+
     // Produits sous le seuil avec réappro auto activé (pour commandes automatiques)
     @Query("SELECT s FROM StockActuel s " +
             "JOIN s.produit p " +

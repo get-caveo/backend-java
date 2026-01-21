@@ -50,6 +50,15 @@ public class StockController {
         return ResponseEntity.ok(alertes);
     }
 
+    /**
+     * Nombre d'alertes stock (pour badge frontend)
+     */
+    @GetMapping("/alertes/count")
+    public ResponseEntity<Long> getAlertesCount() {
+        long count = stockService.countAlertes();
+        return ResponseEntity.ok(count);
+    }
+
     // ==================== MOUVEMENTS ====================
 
     /**
