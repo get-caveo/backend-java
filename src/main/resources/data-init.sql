@@ -149,19 +149,19 @@ INSERT INTO inventaires (nom, statut, date_debut, date_fin, utilisateur_id, note
 -- =============================================
 -- LIGNES INVENTAIRE (pour l'inventaire ci-dessus)
 -- =============================================
-INSERT INTO lignes_inventaire (inventaire_id, produit_id, unite_conditionnement_id, quantite_theorique, quantite_comptee, ecart, notes, scanne_le) VALUES
-    (1, 1, 1, 24, 24, 0, NULL, '2025-12-15 10:15:00'),
-    (1, 1, 2, 6, 6, 0, NULL, '2025-12-15 10:18:00'),
-    (1, 2, 1, 6, 6, 0, 'Vérification double effectuée', '2025-12-15 10:25:00'),
-    (1, 3, 1, 36, 36, 0, NULL, '2025-12-15 11:00:00'),
-    (1, 3, 2, 8, 8, 0, NULL, '2025-12-15 11:05:00'),
-    (1, 4, 1, 18, 18, 0, NULL, '2025-12-15 11:30:00'),
-    (1, 4, 4, 12, 12, 0, NULL, '2025-12-15 11:35:00'),
-    (1, 5, 1, 48, 48, 0, NULL, '2025-12-15 12:00:00'),
-    (1, 6, 1, 18, 18, 0, NULL, '2025-12-15 14:00:00'),
-    (1, 6, 2, 4, 4, 0, NULL, '2025-12-15 14:05:00'),
-    (1, 7, 1, 30, 30, 0, NULL, '2025-12-15 14:30:00'),
-    (1, 7, 2, 6, 6, 0, NULL, '2025-12-15 14:35:00'),
-    (1, 8, 1, 12, 12, 0, NULL, '2025-12-15 15:00:00'),
-    (1, 9, 1, 24, 24, 0, NULL, '2025-12-15 15:30:00'),
-    (1, 10, 1, 8, 8, 0, NULL, '2025-12-15 16:00:00');
+INSERT INTO lignes_inventaire (inventaire_id, produit_id, unite_conditionnement_id, quantite_attendue, quantite_comptee, difference, statut, notes, compte_le) VALUES
+    (1, 1, 1, 24, 24, 0, 'VALIDEE', NULL, '2025-12-15 10:15:00'),
+    (1, 1, 2, 6, 6, 0, 'VALIDEE', NULL, '2025-12-15 10:18:00'),
+    (1, 2, 1, 6, 6, 0, 'VALIDEE', 'Vérification double effectuée', '2025-12-15 10:25:00'),
+    (1, 3, 1, 36, 36, 0, 'VALIDEE', NULL, '2025-12-15 11:00:00'),
+    (1, 3, 2, 8, 8, 0, 'VALIDEE', NULL, '2025-12-15 11:05:00'),
+    (1, 4, 1, 18, 18, 0, 'VALIDEE', NULL, '2025-12-15 11:30:00'),
+    (1, 4, 4, 12, 12, 0, 'VALIDEE', NULL, '2025-12-15 11:35:00'),
+    (1, 5, 1, 48, 48, 0, 'VALIDEE', NULL, '2025-12-15 12:00:00'),
+    (1, 6, 1, 18, 18, 0, 'VALIDEE', NULL, '2025-12-15 14:00:00'),
+    (1, 6, 2, 4, 4, 0, 'VALIDEE', NULL, '2025-12-15 14:05:00'),
+    (1, 7, 1, 30, 30, 0, 'VALIDEE', NULL, '2025-12-15 14:30:00'),
+    (1, 7, 2, 6, 6, 0, 'VALIDEE', NULL, '2025-12-15 14:35:00'),
+    (1, 8, 1, 12, 12, 0, 'VALIDEE', NULL, '2025-12-15 15:00:00'),
+    (1, 9, 1, 24, 24, 0, 'VALIDEE', NULL, '2025-12-15 15:30:00'),
+    (1, 10, 1, 8, 8, 0, 'VALIDEE', NULL, '2025-12-15 16:00:00');
