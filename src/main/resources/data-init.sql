@@ -8,7 +8,7 @@ INSERT INTO utilisateurs (email, mot_de_passe, prenom, nom, telephone, role, act
 -- CATÉGORIES
 -- =============================================
 INSERT INTO categories (nom, description, ordre_tri, actif, cree_le) VALUES
-    ('Vins Rouges', 'Vins rouges de France et du monde', 1, true, '2025-12-19 09:00:00'),
+    ('Vins Rouges', 'Vins rouges', 1, true, '2025-12-19 09:00:00'),
     ('Vins Blancs', 'Vins blancs secs et moelleux', 2, true, '2025-12-19 09:00:00'),
     ('Vins Rosés', 'Vins rosés de Provence et autres régions', 3, true, '2025-12-19 09:00:00'),
     ('Champagnes', 'Champagnes et crémants', 4, true, '2025-12-19 09:00:00'),
