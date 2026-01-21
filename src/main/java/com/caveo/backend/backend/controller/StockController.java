@@ -1,11 +1,13 @@
 package com.caveo.backend.backend.controller;
 
 import com.caveo.backend.backend.exception.GestionException;
+import com.caveo.backend.backend.model.ConditionnementProduit;
 import com.caveo.backend.backend.model.MouvementStock;
 import com.caveo.backend.backend.model.StockActuel;
 import com.caveo.backend.backend.security.AppUserDetails;
 import com.caveo.backend.backend.security.IsEmploye;
 import com.caveo.backend.backend.service.StockService;
+import com.caveo.backend.backend.dao.ConditionnementProduitDao;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import java.util.List;
 public class StockController {
 
     private final StockService stockService;
+    private final ConditionnementProduitDao conditionnementProduitDao;
 
     // ==================== STOCK ACTUEL ====================
 
@@ -132,5 +135,17 @@ public class StockController {
 
         stockService.libererStock(produitId, uniteConditionnementId, quantite);
         return ResponseEntity.ok().build();
+    }
+
+    // ==================== SCANNER CODE-BARRE ====================
+
+    /**
+     * Recherche par code-barre (retourne le conditionnement avec produit et stock)
+     */
+    @GetMapping("/code-barre/{codeBarre}")
+    public ResponseEntity<ConditionnementProduit> getByCodeBarre(@PathVariable String codeBarre) {
+        ConditionnementProduit conditionnement = conditionnementProduitDao.findByCodeBarre(codeBarre)
+                .orElseThrow(() -> GestionException.notFound("Code-barre", codeBarre));
+        return ResponseEntity.ok(conditionnement);
     }
 }

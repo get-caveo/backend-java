@@ -21,4 +21,6 @@ public interface ConditionnementProduitDao extends JpaRepository<Conditionnement
             Integer produitId, Integer uniteConditionnementId);
 
     void deleteByProduitId(Integer produitId);
+
+    Optional<ConditionnementProduit> findByCodeBarre(String codeBarre);
 }

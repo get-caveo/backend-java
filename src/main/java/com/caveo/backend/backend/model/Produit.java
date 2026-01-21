@@ -12,8 +12,8 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -89,9 +89,9 @@ public class Produit {
 
     @OneToMany(mappedBy = "produit", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("produit")
-    private List<ConditionnementProduit> conditionnements = new ArrayList<>();
+    private Set<ConditionnementProduit> conditionnements = new HashSet<>();
 
     @OneToMany(mappedBy = "produit", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("produit")
-    private List<FournisseurProduit> fournisseurs = new ArrayList<>();
+    private Set<FournisseurProduit> fournisseurs = new HashSet<>();
 }

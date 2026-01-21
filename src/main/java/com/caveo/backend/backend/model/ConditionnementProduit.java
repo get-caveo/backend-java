@@ -31,6 +31,9 @@ public class ConditionnementProduit {
     @Column(nullable = false)
     private Boolean disponible = true;
 
+    @Column(name = "code_barre", length = 50, unique = true)
+    private String codeBarre;
+
     @CreationTimestamp
     @Column(name = "cree_le", updatable = false)
     private LocalDateTime creeLe;
