@@ -29,6 +29,8 @@ public interface ProduitDao extends JpaRepository<Produit, Integer> {
 
     Optional<Produit> findBySku(String sku);
 
+    Optional<Produit> findByCodeBarre(String codeBarre);
+
     // Produit avec toutes ses relations (pour le détail)
     @Query("SELECT DISTINCT p FROM Produit p " +
             "LEFT JOIN FETCH p.categorie " +

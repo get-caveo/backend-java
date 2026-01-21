@@ -533,6 +533,28 @@ GET /api/produits/sku/{sku}
 
 ---
 
+### Récupérer un produit par code-barre (scanner)
+```http
+GET /api/produits/code-barre/{codeBarre}
+```
+
+**Exemple:** `GET /api/produits/code-barre/3760001234567`
+
+**Response:** `200 OK`
+```json
+{
+  "id": 1,
+  "sku": "VIN-RG-001",
+  "nom": "Château Margaux 2018",
+  "codeBarre": "3760001234567",
+  ...
+}
+```
+
+> **Usage:** Endpoint pour scanner de code-barres (EAN-13, UPC, etc.)
+
+---
+
 ### Créer un produit
 ```http
 POST /api/produits

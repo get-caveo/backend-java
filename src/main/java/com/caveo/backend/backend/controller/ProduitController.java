@@ -69,6 +69,13 @@ public class ProduitController {
         return ResponseEntity.ok(produit);
     }
 
+    @GetMapping("/code-barre/{codeBarre}")
+    public ResponseEntity<Produit> getByCodeBarre(@PathVariable String codeBarre) {
+        Produit produit = produitDao.findByCodeBarre(codeBarre)
+                .orElseThrow(() -> GestionException.notFound("Produit avec code barre", codeBarre));
+        return ResponseEntity.ok(produit);
+    }
+
     @PostMapping
     public ResponseEntity<Produit> create(@RequestBody @Valid Produit produit) {
         // Vérifier SKU unique
