@@ -2,6 +2,8 @@ package com.caveo.backend.backend.dao;
 
 import com.caveo.backend.backend.model.ConditionnementProduit;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -23,4 +25,11 @@ public interface ConditionnementProduitDao extends JpaRepository<Conditionnement
     void deleteByProduitId(Integer produitId);
 
     Optional<ConditionnementProduit> findByCodeBarre(String codeBarre);
+
+    @Query("SELECT cp FROM ConditionnementProduit cp " +
+            "LEFT JOIN FETCH cp.produit p " +
+            "LEFT JOIN FETCH cp.uniteConditionnement " +
+            "LEFT JOIN FETCH p.categorie " +
+            "WHERE cp.codeBarre = :codeBarre")
+    Optional<ConditionnementProduit> findByCodeBarreWithDetails(@Param("codeBarre") String codeBarre);
 }
