@@ -1630,6 +1630,8 @@ Le bouton "Générer commandes automatiques" doit:
 
 Les produits avec `reapproAuto: false` apparaissent dans les alertes mais ne sont **pas inclus** dans la génération automatique. L'opérateur doit créer manuellement une commande pour ces produits via `POST /api/commandes-fournisseur`.
 
+> **Note:** Le champ `reapproAuto` peut être modifié à tout moment via `PUT /api/produits/{id}` avec `{ "reapproAuto": true }`. Le produit sera alors inclus dans les prochaines générations automatiques.
+
 ---
 
 ## Guide Frontend - Scanner (Inventaire)
@@ -1642,7 +1644,7 @@ Cette section explique comment implémenter le workflow scanner pour les inventa
 1. Créer inventaire    POST /api/inventaires
          |
          v
-2. Démarrer            PUT /api/inventaires/{id}/demarrer
+2. Démarrer            POST /api/inventaires/{id}/demarrer
          |
          v
 3. Scanner produit     GET /api/produits/code-barre/{codeBarre}
@@ -1657,7 +1659,7 @@ Cette section explique comment implémenter le workflow scanner pour les inventa
 6. Répéter 3-5         Pour chaque produit
          |
          v
-7. Terminer            PUT /api/inventaires/{id}/terminer
+7. Terminer            POST /api/inventaires/{id}/terminer
 ```
 
 ### Recherche par code-barre
