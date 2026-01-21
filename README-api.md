@@ -7,16 +7,20 @@ Base URL: `http://localhost:8080`
 
 ---
 
-## Table des matières
+## Table des matieres
 
-1. [Catégories](#-catégories)
-2. [Domaines](#-domaines)
-3. [Unités de Conditionnement](#-unités-de-conditionnement)
-4. [Fournisseurs](#-fournisseurs)
-5. [Produits](#-produits)
-6. [Stock](#-stock)
-7. [Inventaires](#-inventaires)
-8. [Commandes Fournisseur](#-commandes-fournisseur)
+1. [Categories](#categories)
+2. [Domaines](#domaines)
+3. [Unites de Conditionnement](#unites-de-conditionnement)
+4. [Fournisseurs](#fournisseurs)
+5. [Produits](#produits)
+6. [Stock](#stock)
+7. [Inventaires](#inventaires)
+8. [Commandes Fournisseur](#commandes-fournisseur)
+9. [Guide Frontend - Alertes Stock](#guide-frontend---alertes-stock)
+10. [Guide Frontend - Scanner](#guide-frontend---scanner-inventaire)
+11. [Codes d'erreur](#codes-derreur)
+12. [Notes importantes](#notes-importantes)
 
 ---
 
@@ -533,6 +537,28 @@ GET /api/produits/sku/{sku}
 
 ---
 
+### Récupérer un produit par code-barre (scanner)
+```http
+GET /api/produits/code-barre/{codeBarre}
+```
+
+**Exemple:** `GET /api/produits/code-barre/3760001234567`
+
+**Response:** `200 OK`
+```json
+{
+  "id": 1,
+  "sku": "VIN-RG-001",
+  "nom": "Château Margaux 2018",
+  "codeBarre": "3760001234567",
+  ...
+}
+```
+
+> **Usage:** Endpoint pour scanner de code-barres (EAN-13, UPC, etc.)
+
+---
+
 ### Créer un produit
 ```http
 POST /api/produits
@@ -839,6 +865,20 @@ GET /api/stock/alertes?reapproAutoOnly=true
   }
 ]
 ```
+
+---
+
+### Compteur alertes (badge frontend)
+```http
+GET /api/stock/alertes/count
+```
+
+**Response:** `200 OK`
+```json
+5
+```
+
+> **Usage frontend:** Appeler cet endpoint en polling (toutes les 30-60 secondes) pour afficher un badge de notification dans l'interface. Voir la section [Guide Frontend - Alertes Stock](#guide-frontend---alertes-stock).
 
 ---
 
@@ -1504,6 +1544,144 @@ POST /api/commandes-fournisseur/auto/generer
 
 ---
 
+## Guide Frontend - Alertes Stock
+
+Cette section explique comment implémenter le système d'alertes stock dans le frontend.
+
+### Workflow complet
+
+```
+1. Polling badge       GET /api/stock/alertes/count (toutes les 30-60s)
+         |
+         v
+2. Si count > 0  -->   Afficher badge rouge avec le nombre
+         |
+         v
+3. Clic sur badge      GET /api/stock/alertes (liste complète)
+         |
+         v
+4. Afficher tableau    Produit | Stock | Seuil | Manque | Réappro
+         |
+         v
+5. Bouton "Générer"    POST /api/commandes-fournisseur/auto/generer
+```
+
+### Implémentation du polling
+
+```javascript
+// Exemple React/Vue - polling toutes les 30 secondes
+const [alertCount, setAlertCount] = useState(0);
+
+useEffect(() => {
+  const fetchAlertCount = async () => {
+    const response = await api.get('/api/stock/alertes/count');
+    setAlertCount(response.data);
+  };
+  
+  fetchAlertCount();
+  const interval = setInterval(fetchAlertCount, 30000);
+  return () => clearInterval(interval);
+}, []);
+```
+
+### Affichage du tableau des alertes
+
+| Colonne | Source | Description |
+|---------|--------|-------------|
+| Produit | `stock.produit.nom` | Nom du produit |
+| SKU | `stock.produit.sku` | Référence unique |
+| Stock actuel | `stock.quantite` | Quantité en stock |
+| Seuil minimal | `stock.produit.seuilStockMinimal` | Seuil d'alerte |
+| Manque | `seuil - stock` | Quantité à commander |
+| Réappro auto | `stock.produit.reapproAuto` | Si éligible commande auto |
+
+### Génération automatique des commandes
+
+Le bouton "Générer commandes automatiques" doit:
+
+1. Appeler `POST /api/commandes-fournisseur/auto/generer`
+2. Le backend crée des commandes **groupées par fournisseur**
+3. Seuls les produits avec `reapproAuto: true` sont inclus
+4. Rediriger vers la liste des commandes ou afficher un message de confirmation
+
+**Response exemple:**
+```json
+[
+  {
+    "id": 15,
+    "numeroCommande": "CMD-2026-0015",
+    "statut": "BROUILLON",
+    "fournisseur": { "nom": "Grands Vins de Bordeaux" },
+    "lignes": [
+      { "produit": { "nom": "Château Margaux 2018" }, "quantiteCommandee": 8 },
+      { "produit": { "nom": "Château Latour 2019" }, "quantiteCommandee": 5 }
+    ]
+  },
+  {
+    "id": 16,
+    "numeroCommande": "CMD-2026-0016",
+    "fournisseur": { "nom": "Domaines de Bourgogne" },
+    "lignes": [...]
+  }
+]
+```
+
+### Produits sans réappro auto
+
+Les produits avec `reapproAuto: false` apparaissent dans les alertes mais ne sont **pas inclus** dans la génération automatique. L'opérateur doit créer manuellement une commande pour ces produits via `POST /api/commandes-fournisseur`.
+
+> **Note:** Le champ `reapproAuto` peut être modifié à tout moment via `PUT /api/produits/{id}` avec `{ "reapproAuto": true }`. Le produit sera alors inclus dans les prochaines générations automatiques.
+
+---
+
+## Guide Frontend - Scanner (Inventaire)
+
+Cette section explique comment implémenter le workflow scanner pour les inventaires.
+
+### Workflow inventaire avec scanner
+
+```
+1. Créer inventaire    POST /api/inventaires
+         |
+         v
+2. Démarrer            POST /api/inventaires/{id}/demarrer
+         |
+         v
+3. Scanner produit     GET /api/produits/code-barre/{codeBarre}
+         |
+         v
+4. Afficher produit    Nom, stock théorique, conditionnement
+         |
+         v
+5. Saisir quantité     PUT /api/inventaires/{id}/lignes/{ligneId}
+         |
+         v
+6. Répéter 3-5         Pour chaque produit
+         |
+         v
+7. Terminer            POST /api/inventaires/{id}/terminer
+```
+
+### Recherche par code-barre
+
+```http
+GET /api/produits/code-barre/{codeBarre}
+```
+
+**Response:** `200 OK` - Le produit correspondant au code-barre
+
+**Response:** `404 Not Found` - Code-barre non reconnu
+
+### Interface recommandée
+
+1. **Champ de saisie** autofocus pour scanner
+2. **Affichage produit** trouvé avec photo si disponible
+3. **Input numérique** pour la quantité comptée
+4. **Écart calculé** automatiquement (compté - théorique)
+5. **Bouton validation** puis retour au scan
+
+---
+
 ## Notes importantes
 
 1. **Authentification:** Toutes les routes nécessitent `@IsEmploye` (rôle `EMPLOYE` ou `ADMIN`).
@@ -1515,6 +1693,6 @@ POST /api/commandes-fournisseur/auto/generer
    - Les réceptions de commandes créent des mouvements d'entrée
    - Les inventaires terminés créent des mouvements de type `INVENTAIRE`
 
-4. **Alertes stock:** Les produits passant sous `seuilStockMinimal` sont signalés dans `/api/stock/alertes`.
+4. **Alertes stock:** Les produits passant sous `seuilStockMinimal` sont signalés dans `/api/stock/alertes`. Utiliser `/api/stock/alertes/count` pour le badge frontend.
 
-5. **Commandes automatiques:** `/api/commandes-fournisseur/auto/generer` crée des commandes pour les produits avec `reapproAuto: true` et stock bas.
+5. **Commandes automatiques:** `/api/commandes-fournisseur/auto/generer` crée des commandes **groupées par fournisseur** pour les produits avec `reapproAuto: true` et stock bas.

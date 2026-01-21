@@ -148,6 +148,13 @@ public class StockService {
     }
 
     /**
+     * Compte le nombre de produits sous le seuil minimal.
+     */
+    public long countAlertes() {
+        return stockActuelDao.countStockSousSeuil();
+    }
+
+    /**
      * Récupère les produits sous le seuil avec réappro auto activé.
      */
     public List<StockActuel> getAlertesAvecReapproAuto() {

@@ -23,11 +23,53 @@ public interface ProduitDao extends JpaRepository<Produit, Integer> {
     @Query("SELECT p FROM Produit p WHERE p.actif = true AND LOWER(p.nom) LIKE LOWER(CONCAT('%', :search, '%'))")
     List<Produit> searchByNom(@Param("search") String search);
 
+    // Liste des produits avec conditionnements et catégorie pour le front office
+    @Query("SELECT DISTINCT p FROM Produit p " +
+            "LEFT JOIN FETCH p.categorie " +
+            "LEFT JOIN FETCH p.domaine " +
+            "LEFT JOIN FETCH p.conditionnements c " +
+            "LEFT JOIN FETCH c.uniteConditionnement " +
+            "WHERE p.actif = true " +
+            "ORDER BY p.nom")
+    List<Produit> findAllProduitsWithConditionnements();
+
+    // Liste des produits par catégorie avec conditionnements
+    @Query("SELECT DISTINCT p FROM Produit p " +
+            "LEFT JOIN FETCH p.categorie " +
+            "LEFT JOIN FETCH p.domaine " +
+            "LEFT JOIN FETCH p.conditionnements c " +
+            "LEFT JOIN FETCH c.uniteConditionnement " +
+            "WHERE p.actif = true AND p.categorie.id = :categorieId " +
+            "ORDER BY p.nom")
+    List<Produit> findByCategorieWithConditionnements(@Param("categorieId") Integer categorieId);
+
+    // Liste des produits par domaine avec conditionnements
+    @Query("SELECT DISTINCT p FROM Produit p " +
+            "LEFT JOIN FETCH p.categorie " +
+            "LEFT JOIN FETCH p.domaine " +
+            "LEFT JOIN FETCH p.conditionnements c " +
+            "LEFT JOIN FETCH c.uniteConditionnement " +
+            "WHERE p.actif = true AND p.domaine.id = :domaineId " +
+            "ORDER BY p.nom")
+    List<Produit> findByDomaineWithConditionnements(@Param("domaineId") Integer domaineId);
+
+    // Recherche avec conditionnements
+    @Query("SELECT DISTINCT p FROM Produit p " +
+            "LEFT JOIN FETCH p.categorie " +
+            "LEFT JOIN FETCH p.domaine " +
+            "LEFT JOIN FETCH p.conditionnements c " +
+            "LEFT JOIN FETCH c.uniteConditionnement " +
+            "WHERE p.actif = true AND LOWER(p.nom) LIKE LOWER(CONCAT('%', :search, '%')) " +
+            "ORDER BY p.nom")
+    List<Produit> searchByNomWithConditionnements(@Param("search") String search);
+
     boolean existsBySkuIgnoreCase(String sku);
 
     boolean existsByCodeBarre(String codeBarre);
 
     Optional<Produit> findBySku(String sku);
+
+    Optional<Produit> findByCodeBarre(String codeBarre);
 
     // Produit avec toutes ses relations (pour le détail)
     @Query("SELECT DISTINCT p FROM Produit p " +

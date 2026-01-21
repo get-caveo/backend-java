@@ -13,7 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -387,20 +390,113 @@ public class CommandeFournisseurService {
     }
 
     /**
-     * Vérifie tous les produits sous seuil et crée des commandes automatiques groupées par fournisseur.
+     * Vérifie tous les produits sous seuil et crée des commandes automatiques GROUPÉES par fournisseur.
+     * Une seule commande par fournisseur avec toutes les lignes des produits manquants.
      */
     @Transactional
     public List<CommandeFournisseur> creerCommandesAutomatiquesGroupees(Utilisateur utilisateurSysteme) {
         List<StockActuel> stockSousSeuil = stockActuelDao.findStockSousSeuilAvecReapproAuto();
         
-        // TODO: Implémenter le groupement par fournisseur pour optimiser
-        // Pour l'instant, déléguer à creerCommandeAutomatique pour chaque produit
-        
-        return stockSousSeuil.stream()
-                .map(stock -> creerCommandeAutomatique(stock.getProduit(), utilisateurSysteme))
-                .filter(cmd -> cmd != null)
-                .toList();
+        if (stockSousSeuil.isEmpty()) {
+            log.info("Aucun produit sous le seuil avec réappro auto activé");
+            return new ArrayList<>();
+        }
+
+        // Trouver l'unité de base
+        UniteConditionnement uniteBase = uniteConditionnementDao.findByEstUniteBaseTrueAndActifTrue();
+        if (uniteBase == null) {
+            List<UniteConditionnement> unites = uniteConditionnementDao.findByActifTrueOrderByOrdreTri();
+            if (unites.isEmpty()) {
+                log.error("Aucune unité de conditionnement disponible");
+                return new ArrayList<>();
+            }
+            uniteBase = unites.get(0);
+        }
+
+        // Grouper les produits par fournisseur préféré
+        // Map<FournisseurId, List<{Produit, FournisseurProduit}>>
+        Map<Integer, List<ProduitACommander>> produitsParFournisseur = new HashMap<>();
+
+        for (StockActuel stock : stockSousSeuil) {
+            Produit produit = stock.getProduit();
+            
+            // Trouver le fournisseur préféré (meilleur prix)
+            List<FournisseurProduit> fournisseursProduit = fournisseurProduitDao
+                    .findByProduitIdOrderByPrixAsc(produit.getId());
+            
+            if (fournisseursProduit.isEmpty()) {
+                log.warn("Aucun fournisseur trouvé pour le produit {} - ignoré", produit.getNom());
+                continue;
+            }
+
+            FournisseurProduit fp = fournisseursProduit.get(0);
+            Integer fournisseurId = fp.getFournisseur().getId();
+
+            // Ajouter au groupe du fournisseur
+            produitsParFournisseur
+                    .computeIfAbsent(fournisseurId, k -> new ArrayList<>())
+                    .add(new ProduitACommander(produit, fp, stock));
+        }
+
+        // Créer une commande par fournisseur
+        List<CommandeFournisseur> commandesCrees = new ArrayList<>();
+        final UniteConditionnement unite = uniteBase;
+
+        for (Map.Entry<Integer, List<ProduitACommander>> entry : produitsParFournisseur.entrySet()) {
+            List<ProduitACommander> produits = entry.getValue();
+            Fournisseur fournisseur = produits.get(0).fournisseurProduit.getFournisseur();
+
+            // Créer la commande
+            CommandeFournisseur commande = new CommandeFournisseur();
+            commande.setNumero(genererNumeroCommande());
+            commande.setFournisseur(fournisseur);
+            commande.setStatut(StatutCommandeFournisseur.BROUILLON);
+            commande.setCreePar(utilisateurSysteme);
+
+            // Construire la liste des noms pour les notes
+            List<String> nomsProduits = new ArrayList<>();
+
+            // Ajouter les lignes
+            BigDecimal montantTotal = BigDecimal.ZERO;
+
+            for (ProduitACommander pac : produits) {
+                Produit produit = pac.produit;
+                FournisseurProduit fp = pac.fournisseurProduit;
+
+                // Calculer quantité à commander (2x le seuil minimum)
+                int quantiteACommander = produit.getSeuilStockMinimal() * 2;
+
+                LigneCommandeFournisseur ligne = new LigneCommandeFournisseur();
+                ligne.setCommandeFournisseur(commande);
+                ligne.setProduit(produit);
+                ligne.setUniteConditionnement(unite);
+                ligne.setQuantite(quantiteACommander);
+                ligne.setPrixUnitaire(fp.getPrixFournisseur() != null ? fp.getPrixFournisseur() : BigDecimal.ZERO);
+                ligne.setPrixTotal(ligne.getPrixUnitaire().multiply(BigDecimal.valueOf(quantiteACommander)));
+                ligne.setQuantiteRecue(0);
+
+                commande.getLignes().add(ligne);
+                montantTotal = montantTotal.add(ligne.getPrixTotal());
+                nomsProduits.add(produit.getNom());
+            }
+
+            commande.setMontantTotal(montantTotal);
+            commande.setNotes("Commande automatique - Stock bas pour: " + String.join(", ", nomsProduits));
+
+            CommandeFournisseur saved = commandeFournisseurDao.save(commande);
+            commandesCrees.add(saved);
+
+            log.info("Commande automatique {} créée pour {} produits chez {} (total: {} €)", 
+                    saved.getNumero(), produits.size(), fournisseur.getNom(), montantTotal);
+        }
+
+        return commandesCrees;
     }
+
+    /**
+     * Classe interne pour regrouper les infos d'un produit à commander.
+     */
+    private record ProduitACommander(Produit produit, FournisseurProduit fournisseurProduit, StockActuel stock) {}
 
     // ==================== UTILITAIRES ====================
 

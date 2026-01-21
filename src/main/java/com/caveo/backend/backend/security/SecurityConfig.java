@@ -31,22 +31,31 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(userDetailsService);
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+        daoAuthenticationProvider.setUserDetailsService(userDetailsService);
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
         return daoAuthenticationProvider;
     }
 
 
     @Bean
-    public SecurityFilterChain configurationHttp(HttpSecurity http) {
+    public SecurityFilterChain configurationHttp(HttpSecurity http) throws Exception {
 
         return http
                 //on désactive les cookies
                 .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 //on désactive la sécurité contre la faille csrf (jeton de formulaire)
                 .csrf(config -> config.disable())
-                //on dconfigure les regle CORS pour les navigateurs
+                //on configure les règles CORS pour les navigateurs
                 .cors(config -> config.configurationSource(corsConfigurationSource()))
+                // Configuration des autorisations
+                .authorizeHttpRequests(auth -> auth
+                        // Endpoints publics accessibles sans authentification
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
+                        // Tous les autres endpoints nécessitent une authentification
+                        .anyRequest().authenticated()
+                )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
