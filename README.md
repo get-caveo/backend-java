@@ -6,7 +6,7 @@ Base URL: `http://localhost:8080`
 
 ### Login
 ```http
-POST /login
+POST /connexion
 ```
 
 **Body:**
