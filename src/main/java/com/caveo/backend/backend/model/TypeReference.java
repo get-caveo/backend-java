@@ -4,5 +4,6 @@ public enum TypeReference {
     COMMANDE_FOURNISSEUR,
     COMMANDE_CLIENT,
     INVENTAIRE,
-    MANUEL
+    MANUEL,
+    VENTE_POS
 }
