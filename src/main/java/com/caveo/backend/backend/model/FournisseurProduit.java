@@ -45,4 +45,9 @@ public class FournisseurProduit {
     @JoinColumn(name = "produit_id", nullable = false)
     @JsonIgnoreProperties({"conditionnements", "fournisseurs", "hibernateLazyInitializer", "handler"})
     private Produit produit;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unite_conditionnement_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private UniteConditionnement uniteConditionnement;
 }

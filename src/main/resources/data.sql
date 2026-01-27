@@ -30,6 +30,14 @@ INSERT IGNORE INTO unites_conditionnement (nom, nom_court, quantite_unite_base, 
     ('Caisse de 6', 'Cx6', 6, 'Caisse de 6 bouteilles de 75cl', 4500),
     ('Caisse de 12', 'Cx12', 12, 'Caisse de 12 bouteilles de 75cl', 9000);
 
+/* Fournisseurs */
+INSERT IGNORE INTO fournisseurs (nom, personne_contact, email, telephone, adresse, conditions_paiement, certification_bio, certification_aoc, certifications_autres) VALUES
+    ('Domaine de Tariquet', 'Pierre Grassa', 'contact@tariquet.com', '+33562091287', '32800 Eauze, Gers', 'Net 30 jours', false, true, 'IGP Côtes de Gascogne'),
+    ('Domaine de Pellehaut', 'Mathieu Béraut', 'info@pellehaut.com', '+33562283791', '32250 Montréal-du-Gers', 'Net 45 jours', true, true, 'IGP Côtes de Gascogne, Agriculture Biologique'),
+    ('Domaine de Joy', 'Olivier Daugé', 'domaine@joy.fr', '+33562090180', '32110 Panjas, Gers', 'Net 30 jours', false, true, 'IGP Côtes de Gascogne'),
+    ('Vignoble Fontan', 'Jean-Marc Fontan', 'contact@vignoble-fontan.fr', '+33562695412', '32800 Eauze, Gers', 'Net 60 jours', false, false, NULL),
+    ('Domaine Uby', 'François Morel', 'cave@uby.fr', '+33562291055', '32150 Cazaubon, Gers', 'Net 30 jours', true, true, 'IGP Côtes de Gascogne, HVE Niveau 3');
+
 /* Produits - Vins */
 INSERT IGNORE INTO produits (sku, nom, description, millesime, degre_alcool, image_url, categorie_id, domaine_id, actif) VALUES
     ('VR-MAR-2018', 'Château Margaux 2018', 'Un millésime exceptionnel, alliance parfaite de puissance et d''élégance. Notes de cassis, violette et épices douces.', 2018, 13.5, 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=400&h=800&fit=crop', 1, 1, true),
@@ -51,6 +59,22 @@ INSERT IGNORE INTO conditionnements_produit (prix_unitaire, disponible, produit_
     (480.00, true, 4, 2),   /* Dom Pérignon - Magnum */
     (320.00, true, 5, 1),   /* Pavillon Blanc - Bouteille 75cl */
     (650.00, true, 6, 1);   /* Dom Pérignon Rosé - Bouteille 75cl */
+
+/* Fournisseurs-Produits - Relations entre fournisseurs, produits et conditionnements */
+/* Format: (prix_fournisseur, delai_appro_jours, fournisseur_id, produit_id, unite_conditionnement_id) */
+INSERT IGNORE INTO fournisseurs_produits (prix_fournisseur, delai_appro_jours, fournisseur_id, produit_id, unite_conditionnement_id) VALUES
+    (650.00, 7, 1, 1, 1),    /* Tariquet fournit Château Margaux - 75cl */
+    (1250.00, 7, 1, 1, 2),   /* Tariquet fournit Château Margaux - Magnum */
+    (3800.00, 10, 1, 1, 3),  /* Tariquet fournit Château Margaux - Caisse 6 */
+    (12000.00, 14, 2, 2, 1), /* Pellehaut fournit Romanée-Conti - 75cl */
+    (550.00, 10, 3, 3, 1),   /* Joy fournit Mouton Rothschild - 75cl */
+    (3200.00, 12, 3, 3, 3),  /* Joy fournit Mouton Rothschild - Caisse 6 */
+    (180.00, 5, 4, 4, 1),    /* Fontan fournit Dom Pérignon - 75cl */
+    (350.00, 5, 4, 4, 2),    /* Fontan fournit Dom Pérignon - Magnum */
+    (220.00, 7, 5, 5, 1),    /* Uby fournit Pavillon Blanc - 75cl */
+    (480.00, 10, 1, 6, 1),   /* Tariquet fournit Dom Pérignon Rosé - 75cl */
+    (700.00, 12, 2, 1, 1),   /* Pellehaut fournit aussi Château Margaux - 75cl (second fournisseur) */
+    (600.00, 8, 5, 3, 1);    /* Uby fournit aussi Mouton Rothschild - 75cl (second fournisseur) */
 
 /* Update produits with seuil_stock_minimal */
 UPDATE produits SET seuil_stock_minimal = 10, reappro_auto = true WHERE sku = 'VR-MAR-2018';

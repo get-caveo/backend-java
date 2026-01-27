@@ -1,6 +1,7 @@
 package com.caveo.backend.backend.controller;
 
 import com.caveo.backend.backend.dao.*;
+import com.caveo.backend.backend.dto.ProduitCreateDto;
 import com.caveo.backend.backend.exception.GestionException;
 import com.caveo.backend.backend.model.*;
 import com.caveo.backend.backend.security.IsEmploye;
@@ -77,32 +78,66 @@ public class ProduitController {
     }
 
     @PostMapping
-    public ResponseEntity<Produit> create(@RequestBody @Valid Produit produit) {
+    public ResponseEntity<Produit> create(@RequestBody @Valid ProduitCreateDto dto) {
         // Vérifier SKU unique
-        if (produitDao.existsBySkuIgnoreCase(produit.getSku())) {
-            throw GestionException.conflict("Un produit avec le SKU '" + produit.getSku() + "' existe déjà");
+        if (produitDao.existsBySkuIgnoreCase(dto.getSku())) {
+            throw GestionException.conflict("Un produit avec le SKU '" + dto.getSku() + "' existe déjà");
         }
 
         // Vérifier code barre unique si fourni
-        if (produit.getCodeBarre() != null && !produit.getCodeBarre().isBlank()
-                && produitDao.existsByCodeBarre(produit.getCodeBarre())) {
-            throw GestionException.conflict("Un produit avec le code barre '" + produit.getCodeBarre() + "' existe déjà");
+        if (dto.getCodeBarre() != null && !dto.getCodeBarre().isBlank()
+                && produitDao.existsByCodeBarre(dto.getCodeBarre())) {
+            throw GestionException.conflict("Un produit avec le code barre '" + dto.getCodeBarre() + "' existe déjà");
         }
 
         // Vérifier que la catégorie existe
-        Categorie categorie = categorieDao.findById(produit.getCategorie().getId())
-                .orElseThrow(() -> GestionException.notFound("Catégorie", produit.getCategorie().getId()));
-        produit.setCategorie(categorie);
+        Categorie categorie = categorieDao.findById(dto.getCategorieId())
+                .orElseThrow(() -> GestionException.notFound("Catégorie", dto.getCategorieId()));
+
+        // Vérifier que le fournisseur existe
+        Fournisseur fournisseur = fournisseurDao.findById(dto.getFournisseurId())
+                .orElseThrow(() -> GestionException.notFound("Fournisseur", dto.getFournisseurId()));
 
         // Vérifier que le domaine existe si fourni
-        if (produit.getDomaine() != null && produit.getDomaine().getId() != null) {
-            Domaine domaine = domaineDao.findById(produit.getDomaine().getId())
-                    .orElseThrow(() -> GestionException.notFound("Domaine", produit.getDomaine().getId()));
-            produit.setDomaine(domaine);
+        Domaine domaine = null;
+        if (dto.getDomaineId() != null) {
+            domaine = domaineDao.findById(dto.getDomaineId())
+                    .orElseThrow(() -> GestionException.notFound("Domaine", dto.getDomaineId()));
         }
 
-        Produit saved = produitDao.save(produit);
-        return new ResponseEntity<>(saved, HttpStatus.CREATED);
+        // Créer le produit
+        Produit produit = new Produit();
+        produit.setSku(dto.getSku());
+        produit.setNom(dto.getNom());
+        produit.setDescription(dto.getDescription());
+        produit.setCategorie(categorie);
+        produit.setDomaine(domaine);
+        produit.setMillesime(dto.getMillesime());
+        produit.setDegreAlcool(dto.getDegreAlcool());
+        produit.setCodeBarre(dto.getCodeBarre());
+        produit.setImageUrl(dto.getImageUrl());
+        produit.setNotesDegustation(dto.getNotesDegustation());
+        produit.setTemperatureService(dto.getTemperatureService());
+        produit.setConditionsConservation(dto.getConditionsConservation());
+        produit.setSeuilStockMinimal(dto.getSeuilStockMinimal() != null ? dto.getSeuilStockMinimal() : 5);
+        produit.setReapproAuto(dto.getReapproAuto() != null ? dto.getReapproAuto() : true);
+        produit.setActif(true);
+
+        Produit savedProduit = produitDao.save(produit);
+
+        // Créer la relation avec le fournisseur obligatoire
+        FournisseurProduit fournisseurProduit = new FournisseurProduit();
+        fournisseurProduit.setProduit(savedProduit);
+        fournisseurProduit.setFournisseur(fournisseur);
+        fournisseurProduit.setPrixFournisseur(dto.getPrixFournisseur());
+        fournisseurProduit.setDelaiApproJours(dto.getDelaiApproJours() != null ? dto.getDelaiApproJours() : 0);
+        fournisseurProduitDao.save(fournisseurProduit);
+
+        // Recharger le produit avec ses relations
+        Produit produitComplet = produitDao.findByIdWithAllRelations(savedProduit.getId())
+                .orElse(savedProduit);
+
+        return new ResponseEntity<>(produitComplet, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
