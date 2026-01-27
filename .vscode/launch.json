@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "BackendApplication",
+      "request": "launch",
+      "mainClass": "com.caveo.backend.backend.BackendApplication",
+      "projectName": "backend",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "BackendApplication (Debug)",
+      "request": "launch",
+      "mainClass": "com.caveo.backend.backend.BackendApplication",
+      "projectName": "backend",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env",
+      "vmArgs": "-Dspring.profiles.active=dev"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot - Remote Debug",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005
+    }
+  ]
+}
