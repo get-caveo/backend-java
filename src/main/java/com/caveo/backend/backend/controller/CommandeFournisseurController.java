@@ -1,6 +1,7 @@
 package com.caveo.backend.backend.controller;
 
 import com.caveo.backend.backend.dto.LigneCommandeCreateDto;
+import com.caveo.backend.backend.dto.LigneCommandeUpdateDto;
 import com.caveo.backend.backend.dto.ReceptionDto;
 import com.caveo.backend.backend.model.CommandeFournisseur;
 import com.caveo.backend.backend.model.LigneCommandeFournisseur;
@@ -91,11 +92,22 @@ public class CommandeFournisseurController {
         return new ResponseEntity<>(ligne, HttpStatus.CREATED);
     }
 
+    @PutMapping("/{id}/lignes/{ligneId}")
+    public ResponseEntity<LigneCommandeFournisseur> updateLigne(
+            @PathVariable Integer id,
+            @PathVariable Integer ligneId,
+            @RequestBody @Valid LigneCommandeUpdateDto dto) {
+
+        LigneCommandeFournisseur ligne = commandeFournisseurService.mettreAJourLigne(
+                id, ligneId, dto.getQuantite(), dto.getPrixUnitaire());
+        return ResponseEntity.ok(ligne);
+    }
+
     @DeleteMapping("/{id}/lignes/{ligneId}")
     public ResponseEntity<Void> deleteLigne(
             @PathVariable Integer id,
             @PathVariable Integer ligneId) {
-        
+
         commandeFournisseurService.supprimerLigne(id, ligneId);
         return ResponseEntity.noContent().build();
     }

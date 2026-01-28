@@ -155,6 +155,34 @@ public class CommandeFournisseurService {
     }
 
     /**
+     * Met à jour une ligne de la commande (uniquement si BROUILLON).
+     */
+    @Transactional
+    public LigneCommandeFournisseur mettreAJourLigne(Integer commandeId, Integer ligneId, Integer quantite, BigDecimal prixUnitaire) {
+        CommandeFournisseur commande = commandeFournisseurDao.findByIdWithLignes(commandeId)
+                .orElseThrow(() -> GestionException.notFound("Commande fournisseur", commandeId));
+
+        if (commande.getStatut() != StatutCommandeFournisseur.BROUILLON) {
+            throw GestionException.badRequest(
+                    "Impossible de modifier des lignes d'une commande en statut " + commande.getStatut());
+        }
+
+        LigneCommandeFournisseur ligne = commande.getLignes().stream()
+                .filter(l -> l.getId().equals(ligneId))
+                .findFirst()
+                .orElseThrow(() -> GestionException.notFound("Ligne commande", ligneId));
+
+        ligne.setQuantite(quantite);
+        ligne.setPrixUnitaire(prixUnitaire);
+        ligne.setPrixTotal(prixUnitaire.multiply(BigDecimal.valueOf(quantite)));
+
+        recalculerMontantTotal(commande);
+        commandeFournisseurDao.save(commande);
+
+        return ligne;
+    }
+
+    /**
      * Supprime une ligne de la commande.
      */
     @Transactional
