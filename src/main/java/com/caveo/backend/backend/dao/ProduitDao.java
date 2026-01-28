@@ -85,4 +85,21 @@ public interface ProduitDao extends JpaRepository<Produit, Integer> {
     // Produits sous le seuil de stock (sera utile pour les alertes)
     @Query("SELECT p FROM Produit p WHERE p.actif = true AND p.reapproAuto = true")
     List<Produit> findProduitsAvecReapproAuto();
+
+    // Produits actifs sans stock (pour les alertes - produits avec seuil mais pas de stock_actuel)
+    @Query("SELECT p FROM Produit p " +
+            "WHERE p.actif = true " +
+            "AND p.seuilStockMinimal IS NOT NULL " +
+            "AND p.seuilStockMinimal > 0 " +
+            "AND NOT EXISTS (SELECT s FROM StockActuel s WHERE s.produit = p)")
+    List<Produit> findProduitsSansStock();
+
+    // Produits actifs sans stock avec réappro auto
+    @Query("SELECT p FROM Produit p " +
+            "WHERE p.actif = true " +
+            "AND p.reapproAuto = true " +
+            "AND p.seuilStockMinimal IS NOT NULL " +
+            "AND p.seuilStockMinimal > 0 " +
+            "AND NOT EXISTS (SELECT s FROM StockActuel s WHERE s.produit = p)")
+    List<Produit> findProduitsSansStockAvecReapproAuto();
 }

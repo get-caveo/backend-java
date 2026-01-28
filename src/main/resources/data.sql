@@ -14,7 +14,8 @@ INSERT IGNORE INTO categories (nom, description, ordre_tri, actif) VALUES
     ('Vins Rouges', 'Sélection de vins rouges prestigieux', 1, true),
     ('Vins Blancs', 'Vins blancs fins et élégants', 2, true),
     ('Champagnes', 'Champagnes et vins effervescents', 3, true),
-    ('Rosés', 'Vins rosés frais et fruités', 4, true);
+    ('Rosés', 'Vins rosés frais et fruités', 4, true),
+    ('Spiritueux', 'Tequilas, whiskies, rhums et autres spiritueux', 5, true);
 
 /* Domaines viticoles */
 INSERT IGNORE INTO domaines (nom, region, description, actif) VALUES
@@ -24,11 +25,18 @@ INSERT IGNORE INTO domaines (nom, region, description, actif) VALUES
     ('Château Mouton Rothschild', 'Bordeaux', 'Premier Grand Cru Classé depuis 1973', true);
 
 /* Unités de conditionnement */
-INSERT IGNORE INTO unites_conditionnement (nom, nom_court, quantite_unite_base, description, volume_ml) VALUES
-    ('Bouteille 75cl', '75cl', 1, 'Bouteille standard de 75cl', 750),
-    ('Magnum 1.5L', 'Magnum', 2, 'Magnum équivalent à 2 bouteilles', 1500),
-    ('Caisse de 6', 'Cx6', 6, 'Caisse de 6 bouteilles de 75cl', 4500),
-    ('Caisse de 12', 'Cx12', 12, 'Caisse de 12 bouteilles de 75cl', 9000);
+INSERT IGNORE INTO unites_conditionnement (nom, nom_court, quantite_unite_base, description, volume_ml, est_vendable, est_unite_base, actif, ordre_tri) VALUES
+    ('Bouteille 75cl', '75cl', 1, 'Bouteille standard de 75cl', 750, true, true, true, 1),
+    ('Magnum 1.5L', 'Magnum', 2, 'Magnum équivalent à 2 bouteilles', 1500, true, false, true, 2),
+    ('Caisse de 6', 'Cx6', 6, 'Caisse de 6 bouteilles de 75cl', 4500, true, false, true, 3),
+    ('Caisse de 12', 'Cx12', 12, 'Caisse de 12 bouteilles de 75cl', 9000, true, false, true, 4),
+    ('Bouteille 70cl', '70cl', 1, 'Bouteille standard de 70cl pour spiritueux', 700, true, false, true, 5);
+
+/* Mise à jour des unités existantes si nécessaire */
+UPDATE unites_conditionnement SET est_vendable = true, actif = true, est_unite_base = true, ordre_tri = 1 WHERE nom_court = '75cl';
+UPDATE unites_conditionnement SET est_vendable = true, actif = true, est_unite_base = false, ordre_tri = 2 WHERE nom_court = 'Magnum';
+UPDATE unites_conditionnement SET est_vendable = true, actif = true, est_unite_base = false, ordre_tri = 3 WHERE nom_court = 'Cx6';
+UPDATE unites_conditionnement SET est_vendable = true, actif = true, est_unite_base = false, ordre_tri = 4 WHERE nom_court = 'Cx12';
 
 /* Fournisseurs */
 INSERT IGNORE INTO fournisseurs (nom, personne_contact, email, telephone, adresse, conditions_paiement, certification_bio, certification_aoc, certifications_autres) VALUES
@@ -47,6 +55,10 @@ INSERT IGNORE INTO produits (sku, nom, description, millesime, degre_alcool, ima
     ('VB-MAR-2020', 'Pavillon Blanc du Château Margaux 2020', 'Grand vin blanc de Bordeaux, fraîcheur et complexité aromatique.', 2020, 13.0, 'https://images.unsplash.com/photo-1566995541428-f2246c17cda1?w=400&h=800&fit=crop', 2, 1, true),
     ('CH-DOM-ROSE', 'Dom Pérignon Rosé 2008', 'Champagne rosé rare et prestigieux, notes de fruits rouges et épices.', 2008, 12.5, 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=800&fit=crop', 3, 3, true);
 
+/* Produits - Spiritueux */
+INSERT IGNORE INTO produits (sku, nom, description, degre_alcool, categorie_id, actif, image_url) VALUES
+    ('SP-TEQ-CANITXA', 'Tequila Canitxa', 'Tequila premium 100% agave bleu, élaborée au Mexique.', 38.0, 5, true, 'https://i.ibb.co/sdnnGPcB/IMG-1500.jpg');
+
 /* Conditionnements produits avec prix */
 INSERT IGNORE INTO conditionnements_produit (prix_unitaire, disponible, produit_id, unite_conditionnement_id) VALUES
     (890.00, true, 1, 1),   /* Château Margaux - Bouteille 75cl */
@@ -58,7 +70,8 @@ INSERT IGNORE INTO conditionnements_produit (prix_unitaire, disponible, produit_
     (250.00, true, 4, 1),   /* Dom Pérignon - Bouteille 75cl */
     (480.00, true, 4, 2),   /* Dom Pérignon - Magnum */
     (320.00, true, 5, 1),   /* Pavillon Blanc - Bouteille 75cl */
-    (650.00, true, 6, 1);   /* Dom Pérignon Rosé - Bouteille 75cl */
+    (650.00, true, 6, 1),   /* Dom Pérignon Rosé - Bouteille 75cl */
+    (35.00, true, 7, 5);    /* Tequila Canitxa - Bouteille 70cl */
 
 /* Fournisseurs-Produits - Relations entre fournisseurs, produits et conditionnements */
 /* Format: (prix_fournisseur, delai_appro_jours, fournisseur_id, produit_id, unite_conditionnement_id) */
@@ -74,7 +87,8 @@ INSERT IGNORE INTO fournisseurs_produits (prix_fournisseur, delai_appro_jours, f
     (220.00, 7, 5, 5, 1),    /* Uby fournit Pavillon Blanc - 75cl */
     (480.00, 10, 1, 6, 1),   /* Tariquet fournit Dom Pérignon Rosé - 75cl */
     (700.00, 12, 2, 1, 1),   /* Pellehaut fournit aussi Château Margaux - 75cl (second fournisseur) */
-    (600.00, 8, 5, 3, 1);    /* Uby fournit aussi Mouton Rothschild - 75cl (second fournisseur) */
+    (600.00, 8, 5, 3, 1),    /* Uby fournit aussi Mouton Rothschild - 75cl (second fournisseur) */
+    (22.00, 7, 1, 7, 5);     /* Tariquet fournit Tequila Canitxa - 70cl */
 
 /* Update produits with seuil_stock_minimal */
 UPDATE produits SET seuil_stock_minimal = 10, reappro_auto = true WHERE sku = 'VR-MAR-2018';
@@ -83,6 +97,7 @@ UPDATE produits SET seuil_stock_minimal = 8, reappro_auto = true WHERE sku = 'VR
 UPDATE produits SET seuil_stock_minimal = 12, reappro_auto = true WHERE sku = 'CH-DOM-2012';
 UPDATE produits SET seuil_stock_minimal = 6, reappro_auto = false WHERE sku = 'VB-MAR-2020';
 UPDATE produits SET seuil_stock_minimal = 4, reappro_auto = true WHERE sku = 'CH-DOM-ROSE';
+UPDATE produits SET seuil_stock_minimal = 6, reappro_auto = true WHERE sku = 'SP-TEQ-CANITXA';
 
 /* Update conditionnements with code_barre (barcode per product+packaging combination) */
 UPDATE conditionnements_produit SET code_barre = '3760001234501' WHERE produit_id = 1 AND unite_conditionnement_id = 1;  /* Margaux 75cl */
@@ -95,6 +110,7 @@ UPDATE conditionnements_produit SET code_barre = '3760001234507' WHERE produit_i
 UPDATE conditionnements_produit SET code_barre = '3760001234508' WHERE produit_id = 4 AND unite_conditionnement_id = 2;  /* Dom Pérignon Magnum */
 UPDATE conditionnements_produit SET code_barre = '3760001234509' WHERE produit_id = 5 AND unite_conditionnement_id = 1;  /* Pavillon Blanc 75cl */
 UPDATE conditionnements_produit SET code_barre = '3760001234510' WHERE produit_id = 6 AND unite_conditionnement_id = 1;  /* Dom Pérignon Rosé 75cl */
+UPDATE conditionnements_produit SET code_barre = '3132590049309' WHERE produit_id = 7 AND unite_conditionnement_id = 5;  /* Tequila Canitxa 70cl */
 
 /* Stock actuel - Initial stock levels */
 INSERT IGNORE INTO stock_actuel (quantite, quantite_reservee, quantite_disponible, quantite_unite_base, dernier_inventaire, produit_id, unite_conditionnement_id) VALUES

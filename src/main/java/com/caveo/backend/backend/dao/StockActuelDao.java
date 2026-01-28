@@ -20,26 +20,31 @@ public interface StockActuelDao extends JpaRepository<StockActuel, Integer> {
     @Query("SELECT s FROM StockActuel s WHERE s.quantiteDisponible > 0")
     List<StockActuel> findStockDisponible();
 
-    // Produits sous le seuil minimal (pour alertes)
+    // Produits sous le seuil minimal (pour alertes) - stock < seuil (pas <=)
     @Query("SELECT s FROM StockActuel s " +
-            "JOIN s.produit p " +
+            "JOIN FETCH s.produit p " +
+            "JOIN FETCH s.uniteConditionnement " +
             "WHERE p.actif = true " +
-            "AND s.quantite <= p.seuilStockMinimal")
+            "AND p.seuilStockMinimal IS NOT NULL " +
+            "AND s.quantite < p.seuilStockMinimal")
     List<StockActuel> findStockSousSeuil();
 
     // Compter les produits sous le seuil minimal
-    @Query("SELECT COUNT(s) FROM StockActuel s " +
+    @Query("SELECT COUNT(DISTINCT s.produit.id) FROM StockActuel s " +
             "JOIN s.produit p " +
             "WHERE p.actif = true " +
-            "AND s.quantite <= p.seuilStockMinimal")
+            "AND p.seuilStockMinimal IS NOT NULL " +
+            "AND s.quantite < p.seuilStockMinimal")
     long countStockSousSeuil();
 
     // Produits sous le seuil avec réappro auto activé (pour commandes automatiques)
     @Query("SELECT s FROM StockActuel s " +
-            "JOIN s.produit p " +
+            "JOIN FETCH s.produit p " +
+            "JOIN FETCH s.uniteConditionnement " +
             "WHERE p.actif = true " +
             "AND p.reapproAuto = true " +
-            "AND s.quantite <= p.seuilStockMinimal")
+            "AND p.seuilStockMinimal IS NOT NULL " +
+            "AND s.quantite < p.seuilStockMinimal")
     List<StockActuel> findStockSousSeuilAvecReapproAuto();
 
     // Stock total en unité de base pour un produit (somme de tous les conditionnements)

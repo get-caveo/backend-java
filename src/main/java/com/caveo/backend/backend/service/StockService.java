@@ -142,23 +142,58 @@ public class StockService {
 
     /**
      * Récupère les produits sous le seuil minimal (alertes).
+     * Inclut les produits avec stock < seuil ET les produits sans stock du tout.
      */
     public List<StockActuel> getAlertes() {
-        return stockActuelDao.findStockSousSeuil();
+        List<StockActuel> alertes = new java.util.ArrayList<>(stockActuelDao.findStockSousSeuil());
+
+        // Ajouter les produits sans aucun stock (stock = 0 implicite)
+        List<Produit> produitsSansStock = produitDao.findProduitsSansStock();
+        for (Produit produit : produitsSansStock) {
+            // Créer une alerte virtuelle avec quantité = 0
+            StockActuel alerteVirtuelle = new StockActuel();
+            alerteVirtuelle.setProduit(produit);
+            alerteVirtuelle.setQuantite(0);
+            alerteVirtuelle.setQuantiteReservee(0);
+            alerteVirtuelle.setQuantiteDisponible(0);
+            alerteVirtuelle.setQuantiteUniteBase(0);
+            // Utiliser l'unité de base par défaut
+            uniteConditionnementDao.findUniteBase().ifPresent(alerteVirtuelle::setUniteConditionnement);
+            alertes.add(alerteVirtuelle);
+        }
+
+        return alertes;
     }
 
     /**
      * Compte le nombre de produits sous le seuil minimal.
      */
     public long countAlertes() {
-        return stockActuelDao.countStockSousSeuil();
+        long countAvecStock = stockActuelDao.countStockSousSeuil();
+        long countSansStock = produitDao.findProduitsSansStock().size();
+        return countAvecStock + countSansStock;
     }
 
     /**
      * Récupère les produits sous le seuil avec réappro auto activé.
      */
     public List<StockActuel> getAlertesAvecReapproAuto() {
-        return stockActuelDao.findStockSousSeuilAvecReapproAuto();
+        List<StockActuel> alertes = new java.util.ArrayList<>(stockActuelDao.findStockSousSeuilAvecReapproAuto());
+
+        // Ajouter les produits sans stock avec réappro auto
+        List<Produit> produitsSansStock = produitDao.findProduitsSansStockAvecReapproAuto();
+        for (Produit produit : produitsSansStock) {
+            StockActuel alerteVirtuelle = new StockActuel();
+            alerteVirtuelle.setProduit(produit);
+            alerteVirtuelle.setQuantite(0);
+            alerteVirtuelle.setQuantiteReservee(0);
+            alerteVirtuelle.setQuantiteDisponible(0);
+            alerteVirtuelle.setQuantiteUniteBase(0);
+            uniteConditionnementDao.findUniteBase().ifPresent(alerteVirtuelle::setUniteConditionnement);
+            alertes.add(alerteVirtuelle);
+        }
+
+        return alertes;
     }
 
     /**

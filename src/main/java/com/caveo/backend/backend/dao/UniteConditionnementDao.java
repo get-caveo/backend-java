@@ -14,7 +14,12 @@ public interface UniteConditionnementDao extends JpaRepository<UniteConditionnem
     List<UniteConditionnement> findByEstVendableTrueAndActifTrueOrderByOrdreTri();
     
     UniteConditionnement findByEstUniteBaseTrueAndActifTrue();
-    
+
+    // Alias pour findByEstUniteBaseTrueAndActifTrue avec Optional
+    default java.util.Optional<UniteConditionnement> findUniteBase() {
+        return java.util.Optional.ofNullable(findByEstUniteBaseTrueAndActifTrue());
+    }
+
     boolean existsByNomIgnoreCase(String nom);
     
     boolean existsByNomCourtIgnoreCase(String nomCourt);

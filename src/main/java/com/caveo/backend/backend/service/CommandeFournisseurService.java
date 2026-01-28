@@ -124,7 +124,7 @@ public class CommandeFournisseurService {
      */
     @Transactional
     public LigneCommandeFournisseur ajouterLigne(Integer commandeId, LigneCommandeCreateDto dto) {
-        CommandeFournisseur commande = commandeFournisseurDao.findById(commandeId)
+        CommandeFournisseur commande = commandeFournisseurDao.findByIdWithLignes(commandeId)
                 .orElseThrow(() -> GestionException.notFound("Commande fournisseur", commandeId));
 
         if (commande.getStatut() != StatutCommandeFournisseur.BROUILLON) {
@@ -402,17 +402,6 @@ public class CommandeFournisseurService {
             return new ArrayList<>();
         }
 
-        // Trouver l'unité de base
-        UniteConditionnement uniteBase = uniteConditionnementDao.findByEstUniteBaseTrueAndActifTrue();
-        if (uniteBase == null) {
-            List<UniteConditionnement> unites = uniteConditionnementDao.findByActifTrueOrderByOrdreTri();
-            if (unites.isEmpty()) {
-                log.error("Aucune unité de conditionnement disponible");
-                return new ArrayList<>();
-            }
-            uniteBase = unites.get(0);
-        }
-
         // Grouper les produits par fournisseur préféré
         // Map<FournisseurId, List<{Produit, FournisseurProduit}>>
         Map<Integer, List<ProduitACommander>> produitsParFournisseur = new HashMap<>();
@@ -440,7 +429,6 @@ public class CommandeFournisseurService {
 
         // Créer une commande par fournisseur
         List<CommandeFournisseur> commandesCrees = new ArrayList<>();
-        final UniteConditionnement unite = uniteBase;
 
         for (Map.Entry<Integer, List<ProduitACommander>> entry : produitsParFournisseur.entrySet()) {
             List<ProduitACommander> produits = entry.getValue();
@@ -462,6 +450,8 @@ public class CommandeFournisseurService {
             for (ProduitACommander pac : produits) {
                 Produit produit = pac.produit;
                 FournisseurProduit fp = pac.fournisseurProduit;
+                // Utiliser l'unité de conditionnement du stock qui est sous le seuil
+                UniteConditionnement unite = pac.stock.getUniteConditionnement();
 
                 // Calculer quantité à commander (2x le seuil minimum)
                 int quantiteACommander = produit.getSeuilStockMinimal() * 2;
