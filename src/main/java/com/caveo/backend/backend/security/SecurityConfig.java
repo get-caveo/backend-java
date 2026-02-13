@@ -53,6 +53,7 @@ public class SecurityConfig {
                         // Endpoints publics accessibles sans authentification
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         // Tous les autres endpoints nécessitent une authentification
                         .anyRequest().authenticated()
                 )

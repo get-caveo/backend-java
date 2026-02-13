@@ -7,25 +7,26 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
-import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "lignes_vente_pos")
-public class LigneVentePOS {
+@Table(name = "lignes_panier")
+public class LignePanier {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vente_pos_id", nullable = false)
-    @JsonIgnoreProperties({"lignes", "paiements", "hibernateLazyInitializer", "handler"})
-    private VentePOS ventePOS;
+    @JoinColumn(name = "panier_id", nullable = false)
+    @JsonIgnoreProperties({"lignes", "hibernateLazyInitializer", "handler"})
+    private Panier panier;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "produit_id", nullable = false)
@@ -43,13 +44,7 @@ public class LigneVentePOS {
     @NotNull(message = "La quantité est obligatoire")
     private Integer quantite;
 
-    @Column(name = "prix_unitaire", nullable = false, precision = 10, scale = 2)
-    @NotNull(message = "Le prix unitaire est obligatoire")
-    private BigDecimal prixUnitaire;
-
-    @Column(name = "prix_total", nullable = false, precision = 10, scale = 2)
-    private BigDecimal prixTotal;
-
-    @Column(name = "remise_ligne", precision = 10, scale = 2)
-    private BigDecimal remiseLigne = BigDecimal.ZERO;
+    @CreationTimestamp
+    @Column(name = "ajoute_le", updatable = false)
+    private LocalDateTime ajouteLe;
 }
