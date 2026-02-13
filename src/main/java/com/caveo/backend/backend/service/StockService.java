@@ -1,10 +1,12 @@
 package com.caveo.backend.backend.service;
 
 import com.caveo.backend.backend.dao.*;
+import com.caveo.backend.backend.dto.NotificationEvent;
 import com.caveo.backend.backend.exception.GestionException;
 import com.caveo.backend.backend.model.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +21,7 @@ public class StockService {
     private final MouvementStockDao mouvementStockDao;
     private final ProduitDao produitDao;
     private final UniteConditionnementDao uniteConditionnementDao;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Enregistre un mouvement de stock et met à jour le stock actuel.
@@ -101,8 +104,8 @@ public class StockService {
     }
 
     /**
-     * Vérifie si le stock est sous le seuil minimal et log une alerte.
-     * Cette méthode sera étendue pour créer automatiquement des commandes fournisseur.
+     * Vérifie si le stock est sous le seuil minimal.
+     * Publie un NotificationEvent (Observer pattern) pour alerter le backoffice en temps réel.
      */
     private void verifierSeuilMinimal(Produit produit, StockActuel stockActuel) {
         if (produit.getSeuilStockMinimal() != null && 
@@ -114,9 +117,32 @@ public class StockService {
                     stockActuel.getQuantite(),
                     produit.getSeuilStockMinimal());
 
+            // Publier une notification STOCK_FAIBLE via l'Observer pattern
+            eventPublisher.publishEvent(new NotificationEvent(
+                    TypeNotification.STOCK_FAIBLE,
+                    "Stock bas : " + produit.getNom(),
+                    "Le produit " + produit.getNom() + " n'a plus que " 
+                            + stockActuel.getQuantite() + " unités (seuil : " 
+                            + produit.getSeuilStockMinimal() + ")",
+                    "PRODUIT",
+                    produit.getId(),
+                    null  // notification globale, pas liée à un utilisateur spécifique
+            ));
+
             if (Boolean.TRUE.equals(produit.getReapproAuto())) {
                 log.info("Réapprovisionnement automatique activé pour le produit {} - " +
                         "Une commande fournisseur devrait être créée", produit.getNom());
+
+                // Publier une notification REAPPRO_BESOIN
+                eventPublisher.publishEvent(new NotificationEvent(
+                        TypeNotification.REAPPRO_BESOIN,
+                        "Réappro. nécessaire : " + produit.getNom(),
+                        "Le produit " + produit.getNom() + " nécessite un réapprovisionnement automatique",
+                        "PRODUIT",
+                        produit.getId(),
+                        null
+                ));
+
                 // TODO: Appeler le service de création de commande fournisseur automatique
                 // commandeFournisseurService.creerCommandeAutomatique(produit);
             }
