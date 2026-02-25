@@ -4,6 +4,7 @@ import com.caveo.backend.backend.dao.PaiementDao;
 import com.caveo.backend.backend.dto.PaiementDto;
 import com.caveo.backend.backend.exception.GestionException;
 import com.caveo.backend.backend.model.*;
+import com.caveo.backend.backend.security.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,8 +26,9 @@ public class PaiementService {
      * Le paiement passe directement en statut COMPLET (simulation).
      */
     @Transactional
-    public Paiement payerCommande(Integer commandeClientId, PaiementDto dto) {
-        CommandeClient commande = commandeClientService.getCommande(commandeClientId);
+    public Paiement payerCommande(Integer commandeClientId, PaiementDto dto, Integer clientId, Role role) {
+        // Vérifier que la commande appartient au client connecté
+        CommandeClient commande = commandeClientService.getCommande(commandeClientId, clientId, role);
 
         if (commande.getStatutCommande() != StatutCommandeClient.EN_ATTENTE) {
             throw GestionException.badRequest(
@@ -66,7 +68,9 @@ public class PaiementService {
         return saved;
     }
 
-    public Paiement getPaiementParCommande(Integer commandeClientId) {
+    public Paiement getPaiementParCommande(Integer commandeClientId, Integer clientId, Role role) {
+        // Vérifier que la commande appartient au client connecté
+        commandeClientService.getCommande(commandeClientId, clientId, role);
         return paiementDao.findByCommandeClientId(commandeClientId)
                 .orElseThrow(() -> GestionException.notFound("Paiement", "commande " + commandeClientId));
     }

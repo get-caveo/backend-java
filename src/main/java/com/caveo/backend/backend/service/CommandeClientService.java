@@ -62,12 +62,18 @@ public class CommandeClientService {
         if (adresseLivraisonId != null) {
             Adresse adresseLivraison = adresseDao.findById(adresseLivraisonId)
                     .orElseThrow(() -> GestionException.notFound("Adresse", adresseLivraisonId));
+            if (!adresseLivraison.getUtilisateur().getId().equals(clientId)) {
+                throw GestionException.forbidden("Cette adresse de livraison ne vous appartient pas");
+            }
             commande.setAdresseLivraison(adresseLivraison);
         }
 
         if (adresseFacturationId != null) {
             Adresse adresseFacturation = adresseDao.findById(adresseFacturationId)
                     .orElseThrow(() -> GestionException.notFound("Adresse", adresseFacturationId));
+            if (!adresseFacturation.getUtilisateur().getId().equals(clientId)) {
+                throw GestionException.forbidden("Cette adresse de facturation ne vous appartient pas");
+            }
             commande.setAdresseFacturation(adresseFacturation);
         }
 
