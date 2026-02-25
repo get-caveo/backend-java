@@ -15,6 +15,14 @@ public interface CommandeClientDao extends JpaRepository<CommandeClient, Integer
 
     List<CommandeClient> findByClientIdOrderByCreeLeDesc(Integer clientId);
 
+    @Query("SELECT DISTINCT c FROM CommandeClient c " +
+            "LEFT JOIN FETCH c.lignes l " +
+            "LEFT JOIN FETCH l.produit " +
+            "LEFT JOIN FETCH l.uniteConditionnement " +
+            "WHERE c.client.id = :clientId " +
+            "ORDER BY c.creeLe DESC")
+    List<CommandeClient> findByClientIdWithDetailsOrderByCreeLeDesc(@Param("clientId") Integer clientId);
+
     List<CommandeClient> findByStatutCommandeOrderByCreeLeDesc(StatutCommandeClient statut);
 
     @Query("SELECT c FROM CommandeClient c ORDER BY c.creeLe DESC")

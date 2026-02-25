@@ -16,7 +16,7 @@ public interface ConditionnementProduitDao extends JpaRepository<Conditionnement
 
     List<ConditionnementProduit> findByProduitIdAndDisponibleTrue(Integer produitId);
 
-    Optional<ConditionnementProduit> findByProduitIdAndUniteConditionnementId(
+    Optional<ConditionnementProduit> findFirstByProduitIdAndUniteConditionnementId(
             Integer produitId, Integer uniteConditionnementId);
 
     boolean existsByProduitIdAndUniteConditionnementId(

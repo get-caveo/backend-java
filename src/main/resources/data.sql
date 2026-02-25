@@ -55,10 +55,6 @@ INSERT IGNORE INTO produits (sku, nom, description, millesime, degre_alcool, ima
     ('VB-MAR-2020', 'Pavillon Blanc du Château Margaux 2020', 'Grand vin blanc de Bordeaux, fraîcheur et complexité aromatique.', 2020, 13.0, 'https://images.unsplash.com/photo-1566995541428-f2246c17cda1?w=400&h=800&fit=crop', 2, 1, true),
     ('CH-DOM-ROSE', 'Dom Pérignon Rosé 2008', 'Champagne rosé rare et prestigieux, notes de fruits rouges et épices.', 2008, 12.5, 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=800&fit=crop', 3, 3, true);
 
-/* Produits - Spiritueux */
-INSERT IGNORE INTO produits (sku, nom, description, degre_alcool, categorie_id, actif, image_url) VALUES
-    ('SP-TEQ-CANITXA', 'Tequila Canitxa', 'Tequila premium 100% agave bleu, élaborée au Mexique.', 38.0, 5, true, 'https://i.ibb.co/sdnnGPcB/IMG-1500.jpg');
-
 /* Conditionnements produits avec prix */
 INSERT IGNORE INTO conditionnements_produit (prix_unitaire, disponible, produit_id, unite_conditionnement_id) VALUES
     (890.00, true, 1, 1),   /* Château Margaux - Bouteille 75cl */

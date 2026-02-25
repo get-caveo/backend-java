@@ -24,14 +24,16 @@ public class PanierService {
      * Récupère le panier du client, ou en crée un nouveau.
      */
     public Panier getPanier(Integer clientId) {
-        return panierDao.findByClientIdWithDetails(clientId)
+        Panier panier = panierDao.findByClientIdWithDetails(clientId)
                 .orElseGet(() -> {
-                    Panier panier = new Panier();
+                    Panier p = new Panier();
                     Utilisateur client = new Utilisateur();
                     client.setId(clientId);
-                    panier.setClient(client);
-                    return panierDao.save(panier);
+                    p.setClient(client);
+                    return panierDao.save(p);
                 });
+        enrichirPrix(panier);
+        return panier;
     }
 
     /**
@@ -48,7 +50,7 @@ public class PanierService {
                 .orElseThrow(() -> GestionException.notFound("Unité de conditionnement", dto.getUniteConditionnementId()));
 
         // Vérifier que le conditionnement existe pour ce produit
-        conditionnementProduitDao.findByProduitIdAndUniteConditionnementId(produit.getId(), unite.getId())
+        conditionnementProduitDao.findFirstByProduitIdAndUniteConditionnementId(produit.getId(), unite.getId())
                 .orElseThrow(() -> GestionException.badRequest(
                         "Ce conditionnement n'est pas disponible pour ce produit"));
 
@@ -70,7 +72,9 @@ public class PanierService {
         }
 
         panierDao.save(panier);
-        return panierDao.findByClientIdWithDetails(clientId).orElse(panier);
+        Panier result = panierDao.findByClientIdWithDetails(clientId).orElse(panier);
+        enrichirPrix(result);
+        return result;
     }
 
     /**
@@ -95,7 +99,9 @@ public class PanierService {
             lignePanierDao.save(ligne);
         }
 
-        return panierDao.findByClientIdWithDetails(clientId).orElse(panier);
+        Panier result = panierDao.findByClientIdWithDetails(clientId).orElse(panier);
+        enrichirPrix(result);
+        return result;
     }
 
     /**
@@ -115,7 +121,9 @@ public class PanierService {
         panier.getLignes().remove(ligne);
         lignePanierDao.delete(ligne);
 
-        return panierDao.findByClientIdWithDetails(clientId).orElse(panier);
+        Panier result = panierDao.findByClientIdWithDetails(clientId).orElse(panier);
+        enrichirPrix(result);
+        return result;
     }
 
     /**
@@ -127,6 +135,19 @@ public class PanierService {
         if (panier != null) {
             panier.getLignes().clear();
             panierDao.save(panier);
+        }
+    }
+
+    /**
+     * Enrichit chaque ligne du panier avec le prix unitaire issu de ConditionnementProduit.
+     */
+    private void enrichirPrix(Panier panier) {
+        if (panier == null || panier.getLignes() == null) return;
+        for (LignePanier ligne : panier.getLignes()) {
+            conditionnementProduitDao.findFirstByProduitIdAndUniteConditionnementId(
+                    ligne.getProduit().getId(),
+                    ligne.getUniteConditionnement().getId()
+            ).ifPresent(cp -> ligne.setPrixUnitaire(cp.getPrixUnitaire()));
         }
     }
 

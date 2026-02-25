@@ -75,7 +75,7 @@ public class CommandeClientService {
         for (LignePanier lignePanier : panier.getLignes()) {
             // Récupérer le prix depuis ConditionnementProduit
             ConditionnementProduit cp = conditionnementProduitDao
-                    .findByProduitIdAndUniteConditionnementId(
+                    .findFirstByProduitIdAndUniteConditionnementId(
                             lignePanier.getProduit().getId(),
                             lignePanier.getUniteConditionnement().getId())
                     .orElseThrow(() -> GestionException.badRequest(
@@ -125,7 +125,7 @@ public class CommandeClientService {
     }
 
     public List<CommandeClient> getCommandesClient(Integer clientId) {
-        return commandeClientDao.findByClientIdOrderByCreeLeDesc(clientId);
+        return commandeClientDao.findByClientIdWithDetailsOrderByCreeLeDesc(clientId);
     }
 
     public List<CommandeClient> getAllCommandes() {
