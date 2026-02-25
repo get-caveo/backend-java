@@ -4,6 +4,7 @@ import com.caveo.backend.backend.dao.*;
 import com.caveo.backend.backend.dto.NotificationEvent;
 import com.caveo.backend.backend.exception.GestionException;
 import com.caveo.backend.backend.model.*;
+import com.caveo.backend.backend.security.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -124,6 +125,25 @@ public class CommandeClientService {
                 .orElseThrow(() -> GestionException.notFound("Commande client", id));
     }
 
+    /**
+     * Détail d'une commande avec vérification de propriété pour les clients.
+     */
+    public CommandeClient getCommande(Integer id, Integer clientId, Role role) {
+        CommandeClient commande = getCommande(id);
+        verifierProprietaire(commande, clientId, role);
+        return commande;
+    }
+
+    /**
+     * Vérifie que le client connecté est bien le propriétaire de la commande.
+     * Les employés et admins peuvent accéder à toutes les commandes.
+     */
+    private void verifierProprietaire(CommandeClient commande, Integer clientId, Role role) {
+        if (role == Role.CLIENT && !commande.getClient().getId().equals(clientId)) {
+            throw GestionException.forbidden("Vous ne pouvez accéder qu'à vos propres commandes");
+        }
+    }
+
     public List<CommandeClient> getCommandesClient(Integer clientId) {
         return commandeClientDao.findByClientIdOrderByCreeLeDesc(clientId);
     }
@@ -234,9 +254,11 @@ public class CommandeClientService {
      * EN_ATTENTE|CONFIRMEE|EN_PREPARATION → ANNULEE. Libère le stock réservé si nécessaire.
      */
     @Transactional
-    public CommandeClient annulerCommande(Integer id) {
+    public CommandeClient annulerCommande(Integer id, Integer clientId, Role role) {
         CommandeClient commande = commandeClientDao.findByIdWithDetails(id)
                 .orElseThrow(() -> GestionException.notFound("Commande client", id));
+
+        verifierProprietaire(commande, clientId, role);
 
         // Libérer le stock réservé avant de transitionner
         if (commande.getStatutCommande() == StatutCommandeClient.CONFIRMEE ||

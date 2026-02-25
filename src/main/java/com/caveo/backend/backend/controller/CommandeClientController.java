@@ -70,11 +70,15 @@ public class CommandeClientController {
 
     /**
      * Détail d'une commande.
+     * Un client ne peut voir que ses propres commandes.
      */
     @GetMapping("/{id}")
     @IsClient
-    public ResponseEntity<CommandeClient> getById(@PathVariable Integer id) {
-        return ResponseEntity.ok(commandeClientService.getCommande(id));
+    public ResponseEntity<CommandeClient> getById(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal AppUserDetails user) {
+        return ResponseEntity.ok(commandeClientService.getCommande(
+                id, user.getUtilisateur().getId(), user.getUtilisateur().getRole()));
     }
 
     /**
@@ -117,10 +121,14 @@ public class CommandeClientController {
 
     /**
      * Annule la commande.
+     * Un client ne peut annuler que ses propres commandes.
      */
     @PostMapping("/{id}/annuler")
     @IsClient
-    public ResponseEntity<CommandeClient> annuler(@PathVariable Integer id) {
-        return ResponseEntity.ok(commandeClientService.annulerCommande(id));
+    public ResponseEntity<CommandeClient> annuler(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal AppUserDetails user) {
+        return ResponseEntity.ok(commandeClientService.annulerCommande(
+                id, user.getUtilisateur().getId(), user.getUtilisateur().getRole()));
     }
 }
