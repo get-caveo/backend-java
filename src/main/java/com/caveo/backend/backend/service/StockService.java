@@ -3,6 +3,7 @@ package com.caveo.backend.backend.service;
 import com.caveo.backend.backend.dao.*;
 import com.caveo.backend.backend.dto.NotificationEvent;
 import com.caveo.backend.backend.exception.GestionException;
+import com.caveo.backend.backend.exception.StockInsuffisantException;
 import com.caveo.backend.backend.model.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +11,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -275,6 +278,40 @@ public class StockService {
         stock.setQuantiteReservee(Math.max(0, nouvelleReservation));
         recalculerQuantites(stock);
         stockActuelDao.save(stock);
+    }
+
+    /**
+     * Vérifie la disponibilité du stock pour une liste de lignes de commande client.
+     * Méthode en lecture seule, ne modifie rien.
+     *
+     * @return Liste des produits avec stock insuffisant (vide si tout est disponible)
+     */
+    public List<StockInsuffisantException.ProduitInsuffisant> verifierDisponibilite(
+            List<LigneCommandeClient> lignes) {
+
+        List<StockInsuffisantException.ProduitInsuffisant> insuffisants = new ArrayList<>();
+
+        for (LigneCommandeClient ligne : lignes) {
+            Optional<StockActuel> stockOpt = stockActuelDao
+                    .findByProduitIdAndUniteConditionnementId(
+                            ligne.getProduit().getId(),
+                            ligne.getUniteConditionnement().getId());
+
+            int disponible = stockOpt
+                    .map(StockActuel::getQuantiteDisponible)
+                    .orElse(0);
+
+            if (disponible < ligne.getQuantite()) {
+                insuffisants.add(new StockInsuffisantException.ProduitInsuffisant(
+                        ligne.getProduit().getId(),
+                        ligne.getProduit().getNom(),
+                        ligne.getQuantite(),
+                        disponible
+                ));
+            }
+        }
+
+        return insuffisants;
     }
 
     // ==================== MÉTHODES UTILITAIRES PRIVÉES ====================

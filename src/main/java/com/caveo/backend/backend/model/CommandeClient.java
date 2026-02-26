@@ -30,7 +30,7 @@ public class CommandeClient {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "statut_commande", nullable = false,
-            columnDefinition = "ENUM('EN_ATTENTE', 'CONFIRMEE', 'EN_PREPARATION', 'EXPEDIEE', 'LIVREE', 'ANNULEE')")
+            columnDefinition = "ENUM('EN_ATTENTE', 'PRE_COMMANDE', 'CONFIRMEE', 'EN_PREPARATION', 'EXPEDIEE', 'LIVREE', 'ANNULEE')")
     private StatutCommandeClient statutCommande = StatutCommandeClient.EN_ATTENTE;
 
     @Column(name = "date_commande")

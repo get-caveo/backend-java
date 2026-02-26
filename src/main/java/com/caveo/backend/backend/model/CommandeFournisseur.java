@@ -57,7 +57,7 @@ public class CommandeFournisseur {
     private Fournisseur fournisseur;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cree_par", nullable = false)
+    @JoinColumn(name = "cree_par")
     @JsonIgnoreProperties({"password", "adresses", "hibernateLazyInitializer", "handler"})
     private Utilisateur creePar;
 

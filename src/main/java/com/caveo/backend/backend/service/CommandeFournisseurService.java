@@ -4,10 +4,12 @@ import com.caveo.backend.backend.dao.*;
 import com.caveo.backend.backend.dto.LigneCommandeCreateDto;
 import com.caveo.backend.backend.dto.ReceptionLigneDto;
 import com.caveo.backend.backend.exception.GestionException;
+import com.caveo.backend.backend.exception.StockInsuffisantException;
 import com.caveo.backend.backend.model.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -515,6 +517,95 @@ public class CommandeFournisseurService {
      * Classe interne pour regrouper les infos d'un produit à commander.
      */
     private record ProduitACommander(Produit produit, FournisseurProduit fournisseurProduit, StockActuel stock) {}
+
+    /**
+     * Crée des commandes fournisseur en brouillon pour combler un déficit de stock spécifique.
+     * Transaction indépendante (REQUIRES_NEW) : les commandes sont persistées même si
+     * la transaction appelante (paiement) échoue.
+     *
+     * @param deficits Liste des produits insuffisants avec leur déficit exact
+     * @return Liste des commandes fournisseur créées
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public List<CommandeFournisseur> creerCommandesPourDeficit(
+            List<StockInsuffisantException.ProduitInsuffisant> deficits) {
+
+        if (deficits.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        // Grouper les déficits par fournisseur préféré
+        Map<Integer, List<DeficitProduit>> deficitsParFournisseur = new HashMap<>();
+
+        for (StockInsuffisantException.ProduitInsuffisant pi : deficits) {
+            Produit produit = produitDao.findById(pi.getProduitId()).orElse(null);
+            if (produit == null) continue;
+
+            List<FournisseurProduit> fps = fournisseurProduitDao
+                    .findByProduitIdOrderByPrixAsc(pi.getProduitId());
+
+            if (fps.isEmpty()) {
+                log.warn("Aucun fournisseur pour le produit {} - pas de commande auto", produit.getNom());
+                continue;
+            }
+
+            FournisseurProduit fp = fps.get(0);
+            deficitsParFournisseur
+                    .computeIfAbsent(fp.getFournisseur().getId(), k -> new ArrayList<>())
+                    .add(new DeficitProduit(produit, fp, pi.getDeficit()));
+        }
+
+        // Créer une commande par fournisseur
+        List<CommandeFournisseur> commandesCrees = new ArrayList<>();
+
+        for (Map.Entry<Integer, List<DeficitProduit>> entry : deficitsParFournisseur.entrySet()) {
+            List<DeficitProduit> produits = entry.getValue();
+            Fournisseur fournisseur = produits.get(0).fp.getFournisseur();
+
+            CommandeFournisseur commande = new CommandeFournisseur();
+            commande.setNumero(genererNumeroCommande());
+            commande.setFournisseur(fournisseur);
+            commande.setStatut(StatutCommandeFournisseur.BROUILLON);
+
+            List<String> nomsProduits = new ArrayList<>();
+            BigDecimal montantTotal = BigDecimal.ZERO;
+
+            for (DeficitProduit dp : produits) {
+                UniteConditionnement unite = dp.fp.getUniteConditionnement();
+                if (unite == null) {
+                    unite = uniteConditionnementDao.findByEstUniteBaseTrueAndActifTrue();
+                }
+
+                LigneCommandeFournisseur ligne = new LigneCommandeFournisseur();
+                ligne.setCommandeFournisseur(commande);
+                ligne.setProduit(dp.produit);
+                ligne.setUniteConditionnement(unite);
+                ligne.setQuantite(dp.deficit);
+                ligne.setPrixUnitaire(dp.fp.getPrixFournisseur() != null
+                        ? dp.fp.getPrixFournisseur() : BigDecimal.ZERO);
+                ligne.setPrixTotal(ligne.getPrixUnitaire().multiply(BigDecimal.valueOf(dp.deficit)));
+                ligne.setQuantiteRecue(0);
+
+                commande.getLignes().add(ligne);
+                montantTotal = montantTotal.add(ligne.getPrixTotal());
+                nomsProduits.add(dp.produit.getNom());
+            }
+
+            commande.setMontantTotal(montantTotal);
+            commande.setNotes("Commande automatique (stock insuffisant lors du paiement) - "
+                    + String.join(", ", nomsProduits));
+
+            CommandeFournisseur saved = commandeFournisseurDao.save(commande);
+            commandesCrees.add(saved);
+
+            log.info("Commande fournisseur auto {} créée pour déficit: {} produit(s) chez {}",
+                    saved.getNumero(), produits.size(), fournisseur.getNom());
+        }
+
+        return commandesCrees;
+    }
+
+    private record DeficitProduit(Produit produit, FournisseurProduit fp, int deficit) {}
 
     // ==================== UTILITAIRES ====================
 

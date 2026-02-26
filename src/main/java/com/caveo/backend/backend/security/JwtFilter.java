@@ -33,21 +33,25 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if(authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
 
-            String jwt = authorizationHeader.substring(7);
+            try {
+                String jwt = authorizationHeader.substring(7);
 
-            String email = Jwts.parser()
-                    .setSigningKey(jwtSecret)
-                    .parseClaimsJws(jwt)
-                    .getBody()
-                    .getSubject();
+                String email = Jwts.parser()
+                        .setSigningKey(jwtSecret)
+                        .parseClaimsJws(jwt)
+                        .getBody()
+                        .getSubject();
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-            usernamePasswordAuthenticationToken
-                    .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                usernamePasswordAuthenticationToken
+                        .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+            } catch (Exception e) {
+                // Invalid or expired token — continue without authentication
+            }
 
         }
 

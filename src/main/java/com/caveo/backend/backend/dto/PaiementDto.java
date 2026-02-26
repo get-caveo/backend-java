@@ -14,4 +14,5 @@ public class PaiementDto {
 
     private String referenceTransaction;
     private String detailsPaiement;
+    private Boolean forcePrecommande = false;
 }

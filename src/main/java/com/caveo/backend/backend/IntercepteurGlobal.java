@@ -1,6 +1,7 @@
 package com.caveo.backend.backend;
 
 import com.caveo.backend.backend.exception.GestionException;
+import com.caveo.backend.backend.exception.StockInsuffisantException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,18 @@ import java.util.Map;
 @ControllerAdvice
 public class IntercepteurGlobal {
 
+
+    @ExceptionHandler(StockInsuffisantException.class)
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> handleStockInsuffisant(StockInsuffisantException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", ex.getMessage());
+        response.put("status", ex.getStatus().value());
+        response.put("type", ex.getType());
+        response.put("produitsInsuffisants", ex.getProduitsInsuffisants());
+        response.put("commandesFournisseur", ex.getNumerosCommandesFournisseur());
+        return new ResponseEntity<>(response, ex.getStatus());
+    }
 
     @ExceptionHandler(GestionException.class)
     @ResponseBody

@@ -4,6 +4,12 @@ SET CHARACTER SET utf8mb4;
 CREATE DATABASE IF NOT EXISTS caveodb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE caveodb;
 
+/* Permettre les commandes fournisseur auto-générées sans utilisateur créateur */
+ALTER TABLE commandes_fournisseur MODIFY COLUMN cree_par INT NULL;
+
+/* Ajouter le statut PRE_COMMANDE pour les commandes payées avec stock insuffisant */
+ALTER TABLE commandes_client MODIFY COLUMN statut_commande ENUM('EN_ATTENTE', 'PRE_COMMANDE', 'CONFIRMEE', 'EN_PREPARATION', 'EXPEDIEE', 'LIVREE', 'ANNULEE') NOT NULL DEFAULT 'EN_ATTENTE';
+
 /* password  = root */
 INSERT IGNORE INTO utilisateurs (email, mot_de_passe, prenom, nom, telephone, role, actif, cree_le) VALUES
     ('simon@caveo.com', '$2a$10$plsl0aqMSsPoxBNFXS4gNuu2CbqN06PCGXFUkftYFTLbKLKfhEKDq', 'Simon', 'Picot', '+33000000000', 'ADMIN', true, '2025-12-19 10:00:00'),

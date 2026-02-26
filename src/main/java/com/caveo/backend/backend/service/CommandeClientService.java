@@ -137,6 +137,21 @@ public class CommandeClientService {
     }
 
     /**
+     * Passe la commande en pré-commande : EN_ATTENTE → PRE_COMMANDE.
+     * Le paiement est accepté mais le stock n'est pas réservé (en attente de réapprovisionnement).
+     */
+    @Transactional
+    public CommandeClient passerEnPreCommande(Integer id) {
+        CommandeClient commande = commandeClientDao.findById(id)
+                .orElseThrow(() -> GestionException.notFound("Commande client", id));
+
+        transitionner(commande, StatutCommandeClient.PRE_COMMANDE);
+
+        log.info("Commande {} passée en pré-commande (stock insuffisant)", commande.getNumero());
+        return commandeClientDao.save(commande);
+    }
+
+    /**
      * Confirme la commande : EN_ATTENTE → CONFIRMEE.
      * Réserve le stock pour chaque ligne.
      */
